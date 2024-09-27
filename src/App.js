@@ -1,24 +1,25 @@
+import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setTaskText, setEditTaskText, setEditTask } from './redux/actions/uiActions';
 import { Tasks } from './components/Tasks';
 import styles from './app.module.css';
 
 export const App = () => {
+	// Подключаем состояния из соответствующих редьюсеров
+	const { taskText, editTaskId, editTaskText } = useSelector((state) => state.ui);
+	const { isSorted, error, isLoading } = useSelector((state) => state.filters);
+
+	const dispatch = useDispatch();
+
+	// Подключаем обработчики из Tasks.js
 	const {
-		taskText,
-		setTaskText,
-		error,
-		isLoading,
-		tasks,
 		handleAddTask,
-		handleEditTask,
 		handleSaveEditedTask,
 		handleDeleteTask,
 		handleSort,
-		isSorted,
-		editTaskId,
-		editTaskText,
 		handleSearchChange,
-		setEditTaskId,
-		setEditTaskText,
+		handleEditTask,
+		sortedTasks, // Подключаем отсортированные и отфильтрованные задачи
 	} = Tasks();
 
 	return (
@@ -28,7 +29,7 @@ export const App = () => {
 				<input
 					type="text"
 					value={taskText}
-					onChange={(e) => setTaskText(e.target.value)}
+					onChange={(e) => dispatch(setTaskText(e.target.value))}
 					placeholder="Ввести новую задачу"
 				/>
 				<button onClick={handleAddTask}>Добавить задачу</button>
@@ -50,7 +51,7 @@ export const App = () => {
 					<div className={styles.loader}></div>
 				) : (
 					<ul className={styles['tasks-block-list']}>
-						{tasks.map((task) => (
+						{sortedTasks.map((task) => (
 							<li key={task.id} className={styles['tasks-block-item']}>
 								{editTaskId === task.id ? (
 									<div className={styles['task-item-content']}>
@@ -58,7 +59,7 @@ export const App = () => {
 											type="text"
 											value={editTaskText}
 											onChange={(e) =>
-												setEditTaskText(e.target.value)
+												dispatch(setEditTaskText(e.target.value))
 											}
 											className={styles['task-input']}
 										/>
@@ -70,7 +71,9 @@ export const App = () => {
 												Сохранить
 											</button>
 											<button
-												onClick={() => setEditTaskId(null)}
+												onClick={() =>
+													dispatch(setEditTask(null, ''))
+												}
 												className={styles['cancel-save-button']}
 											>
 												Отмена

@@ -1,96 +1,66 @@
-import { useState, useEffect, useRef } from 'react';
-import debounce from 'lodash.debounce';
-import { addTask, editTask, deleteTask, sortTasks, filterTasks } from '../utils';
-import { fetchTasks } from '../api/api';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTasks, addTask, editTask, deleteTask } from '../redux/actions/tasksAction';
+import { setEditTask, setTaskText } from '../redux/actions/uiActions';
+import { setSearchQuery, setSorted } from '../redux/actions/filterActions';
 
-export const Tasks = () => {
-	const [taskText, setTaskText] = useState('');
-	const [tasks, setTasks] = useState([]);
-	const [searchQuery, setSearchQuery] = useState('');
-	const [isSorted, setIsSorted] = useState(false);
-	const [error, setError] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
-	const [editTaskId, setEditTaskId] = useState(null);
-	const [editTaskText, setEditTaskText] = useState('');
+export const Tasks = (props) => {
+	const dispatch = useDispatch();
 
-	const debouncedSearch = useRef(
-		debounce((query) => {
-			setSearchQuery(query);
-		}, 300),
-	).current;
+	const { taskText, editTaskId, editTaskText } = useSelector((state) => state.ui);
+	const { tasks } = useSelector((state) => state.tasks);
+	const { searchQuery, isSorted } = useSelector((state) => state.filters);
 
 	useEffect(() => {
-		setIsLoading(true);
-		fetchTasks()
-			.then(setTasks)
-			.catch(() => setError('Ошибка при загрузке задач'))
-			.finally(() => setIsLoading(false));
-	}, []);
+		dispatch(fetchTasks());
+	}, [dispatch]);
 
 	const handleAddTask = () => {
-		addTask(taskText)
-			.then((newTask) => {
-				setTasks((prevTasks) => [...prevTasks, newTask]);
-				setTaskText('');
-				setError('');
-			})
-			.catch((err) => setError(err.message));
+		if (taskText.trim()) {
+			dispatch(addTask(taskText)).then(() => {
+				dispatch(setTaskText(''));
+			});
+		}
 	};
-
 	const handleEditTask = (task) => {
-		setEditTaskId(task.id);
-		setEditTaskText(task.text);
+		dispatch(setEditTask(task.id, task.text));
 	};
 
 	const handleSaveEditedTask = () => {
-		editTask(editTaskId, editTaskText)
-			.then((updatedTask) => {
-				setTasks((prevTasks) =>
-					prevTasks.map((task) =>
-						task.id === editTaskId ? updatedTask : task,
-					),
-				);
-				setEditTaskId(null);
-				setEditTaskText('');
-			})
-			.catch((err) => setError(err.message));
+		if (editTaskText.trim()) {
+			dispatch(editTask(editTaskId, editTaskText)).then(() => {
+				dispatch(setEditTask(null, ''));
+			});
+		}
 	};
 
 	const handleDeleteTask = (id) => {
-		deleteTask(id)
-			.then(() => {
-				setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-			})
-			.catch((err) => setError(err.message));
+		dispatch(deleteTask(id));
 	};
 
 	const handleSort = () => {
-		setIsSorted((prevIsSorted) => !prevIsSorted);
+		dispatch(setSorted(!isSorted));
 	};
 
 	const handleSearchChange = (e) => {
-		const query = e.target.value;
-		debouncedSearch(query);
+		dispatch(setSearchQuery(e.target.value));
 	};
 
-	const sortedTasks = isSorted ? sortTasks(tasks) : tasks;
-	const filteredTasks = filterTasks(sortedTasks, searchQuery);
+	const filteredTasks = tasks.filter((task) =>
+		task.text.toLowerCase().includes(searchQuery.toLowerCase()),
+	);
+
+	const sortedTasks = isSorted
+		? [...filteredTasks].sort((a, b) => a.text.localeCompare(b.text))
+		: filteredTasks;
 
 	return {
-		taskText,
-		setTaskText,
-		error,
-		isLoading,
-		tasks: filteredTasks,
 		handleAddTask,
 		handleSaveEditedTask,
 		handleDeleteTask,
 		handleSort,
-		isSorted,
-		editTaskId,
-		editTaskText,
 		handleSearchChange,
-		setEditTaskText,
 		handleEditTask,
+		sortedTasks,
 	};
 };
