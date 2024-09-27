@@ -22,6 +22,7 @@ export const Tasks = (props) => {
 			});
 		}
 	};
+
 	const handleEditTask = (task) => {
 		dispatch(setEditTask(task.id, task.text));
 	};
