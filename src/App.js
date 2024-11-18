@@ -5,13 +5,11 @@ import { Tasks } from './components/Tasks';
 import styles from './app.module.css';
 
 export const App = () => {
-	// Подключаем состояния из соответствующих редьюсеров
 	const { taskText, editTaskId, editTaskText } = useSelector((state) => state.ui);
 	const { isSorted, error, isLoading } = useSelector((state) => state.filters);
 
 	const dispatch = useDispatch();
 
-	// Подключаем обработчики из Tasks.js
 	const {
 		handleAddTask,
 		handleSaveEditedTask,
@@ -19,7 +17,7 @@ export const App = () => {
 		handleSort,
 		handleSearchChange,
 		handleEditTask,
-		sortedTasks, // Подключаем отсортированные и отфильтрованные задачи
+		sortedTasks,
 	} = Tasks();
 
 	return (
